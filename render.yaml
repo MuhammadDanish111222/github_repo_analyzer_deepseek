@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: github-repo-analyzer-deepseek
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com
+      - key: DEEPSEEK_MODEL
+        value: deepseek-v4-flash
+      - key: DEEPSEEK_THINKING_TYPE
+        value: disabled
+      - key: REQUEST_TIMEOUT_SECONDS
+        value: "25"
+      - key: MAX_SOURCE_FILE_BYTES
+        value: "200000"
+      - key: MAX_CODE_CHARS_FOR_LLM
+        value: "80000"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: GITHUB_TOKEN
+        sync: false
