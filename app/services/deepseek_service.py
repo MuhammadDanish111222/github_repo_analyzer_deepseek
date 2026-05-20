@@ -56,10 +56,14 @@ class DeepSeekAnalyzerService:
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.1,
-            "max_tokens": 1200,
+            # Thinking mode improves code-review quality. Reasoning tokens are internal
+            # to DeepSeek and are not returned by this API, keeping the assessment
+            # response clean and matching the required JSON contract.
+            "max_tokens": 2500,
             "stream": False,
             "response_format": {"type": "json_object"},
             "thinking": {"type": self.settings.deepseek_thinking_type},
+            "reasoning_effort": self.settings.deepseek_reasoning_effort,
         }
 
         try:

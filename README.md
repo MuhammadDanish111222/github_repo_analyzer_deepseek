@@ -1,21 +1,34 @@
+---
+title: GitHub Repo Analyzer DeepSeek
+emoji: 🔎
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # Live GitHub Repository Analyzer API
 
-A production-ready FastAPI backend that accepts a public GitHub repository URL, fetches the most relevant primary source code file, analyzes it with DeepSeek, and returns a clean JSON security review.
+FastAPI backend service that accepts a public GitHub repository URL, fetches the primary source code file, analyzes it using DeepSeek, and returns a structured vulnerability report.
 
-## Tech stack
+## Tech Stack
 
 - Python 3.11.9
 - FastAPI
 - DeepSeek Chat Completions API
-- httpx async HTTP client
-- Pydantic v2 settings and validation
-- Docker deployment, ready for Render free tier
+- GitHub REST API
+- Docker
+- Hugging Face Spaces free CPU deployment
 
-## API contract
+## Endpoint
 
-### POST `/api/analyze-repo`
+```http
+POST /api/analyze-repo
+```
 
-Request:
+Request body:
 
 ```json
 {
@@ -23,7 +36,7 @@ Request:
 }
 ```
 
-Response:
+Response body:
 
 ```json
 {
@@ -37,163 +50,114 @@ Response:
 }
 ```
 
-## Local setup
+## Local Setup
 
-### 1. Install Python 3.11.9
-
-Recommended on Windows:
-
-```powershell
-py -3.11 --version
-```
-
-Recommended on macOS/Linux with pyenv:
+Create virtual environment:
 
 ```bash
-pyenv install 3.11.9
-pyenv local 3.11.9
-python --version
+python -m venv .venv
 ```
 
-### 2. Create and activate a virtual environment
-
-Windows PowerShell:
+Activate it on Windows PowerShell:
 
 ```powershell
-python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-macOS/Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
+Install dependencies:
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Create `.env`
-
-Copy the example file:
+Create `.env` from `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Then add your real DeepSeek key:
+Add your DeepSeek API key:
 
 ```env
-DEEPSEEK_API_KEY=sk-your-real-key-here
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
 ```
 
-Optional GitHub token is recommended to avoid low public API rate limits:
-
-```env
-GITHUB_TOKEN=github_pat_your_optional_token
-```
-
-### 5. Run locally
+Run locally:
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open:
+Open docs:
 
 ```text
 http://localhost:8000/docs
 ```
 
-### 6. Test the endpoint
+## Hugging Face Spaces Deployment
 
-```bash
-curl -X POST "http://localhost:8000/api/analyze-repo" \
-  -H "Content-Type: application/json" \
-  -d '{"repo_url":"https://github.com/tiangolo/fastapi"}'
+1. Create a free Hugging Face account.
+2. Go to Spaces.
+3. Click **Create new Space**.
+4. Use this setup:
+   - Space name: `github-repo-analyzer-deepseek`
+   - SDK: `Docker`
+   - Visibility: `Public`
+   - Hardware: `CPU basic free`
+5. Upload all project files to the Space repository.
+6. Go to **Settings > Variables and secrets**.
+7. Add these Secrets:
+
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
 ```
 
-## Docker run locally
+8. Add these Variables:
 
-```bash
-docker build -t github-repo-analyzer .
-docker run --rm -p 8000:10000 --env-file .env github-repo-analyzer
+```env
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_THINKING_TYPE=enabled
+DEEPSEEK_REASONING_EFFORT=high
+APP_ENV=production
+REQUEST_TIMEOUT_SECONDS=60
+MAX_SOURCE_FILE_BYTES=200000
+MAX_CODE_CHARS_FOR_LLM=80000
+LOG_LEVEL=INFO
+ALLOWED_ORIGINS=
+PORT=7860
 ```
 
-Then call:
+Optional Secret for higher GitHub API rate limits:
 
-```bash
-curl -X POST "http://localhost:8000/api/analyze-repo" \
-  -H "Content-Type: application/json" \
-  -d '{"repo_url":"https://github.com/tiangolo/fastapi"}'
+```env
+GITHUB_TOKEN=your_github_token_here
 ```
 
-## Deploy free on Render
-
-1. Push this folder to a public GitHub repository.
-2. Go to Render Dashboard.
-3. Click **New**.
-4. Choose **Web Service**.
-5. Connect your GitHub repository.
-6. Select **Docker** as the runtime or let Render detect the `Dockerfile`.
-7. Choose the **Free** instance type.
-8. Add environment variables:
-   - `DEEPSEEK_API_KEY`
-   - `DEEPSEEK_MODEL=deepseek-v4-flash`
-   - `DEEPSEEK_BASE_URL=https://api.deepseek.com`
-   - Optional: `GITHUB_TOKEN`
-9. Deploy.
-
-Your live endpoint will be:
+After build completes, your API docs will be available at:
 
 ```text
-https://your-render-service.onrender.com/api/analyze-repo
+https://YOUR_USERNAME-github-repo-analyzer-deepseek.hf.space/docs
 ```
 
-Test it:
+Your assessment endpoint will be:
+
+```text
+https://YOUR_USERNAME-github-repo-analyzer-deepseek.hf.space/api/analyze-repo
+```
+
+## Test Live API
 
 ```bash
-curl -X POST "https://your-render-service.onrender.com/api/analyze-repo" \
+curl -X POST "https://YOUR_USERNAME-github-repo-analyzer-deepseek.hf.space/api/analyze-repo" \
   -H "Content-Type: application/json" \
   -d '{"repo_url":"https://github.com/tiangolo/fastapi"}'
 ```
 
-## Project structure
+## Security Notes
 
-```text
-.
-├── app
-│   ├── core
-│   │   └── config.py
-│   ├── services
-│   │   ├── deepseek_service.py
-│   │   └── github_service.py
-│   ├── __init__.py
-│   ├── exceptions.py
-│   ├── main.py
-│   └── schemas.py
-├── tests
-│   ├── test_github_url_parser.py
-│   └── test_primary_file_selection.py
-├── .dockerignore
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── README.md
-├── render.yaml
-└── requirements.txt
-```
-
-## Notes
-
-- API keys are read only from environment variables.
-- The service never stores repository code.
-- The app analyzes one primary source file, as required by the assessment.
-- The primary file selector prioritizes common application entry points such as `main.py`, `app.py`, `server.js`, `index.ts`, and similar files.
-- Very large files are skipped to protect API limits and latency.
-- Render free services can sleep after idle time, so the first request after inactivity can be slower.
+- Do not commit `.env`.
+- Store `DEEPSEEK_API_KEY` as a Hugging Face Secret.
+- Store `GITHUB_TOKEN` as a Secret if used.
+- Only `.env.example` should be public.

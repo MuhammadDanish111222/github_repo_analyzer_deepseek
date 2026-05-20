@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -44,12 +43,28 @@ app = FastAPI(
     },
 )
 
+def get_cors_origins() -> list[str]:
+    settings = get_settings()
+    configured_origins = [
+        origin.strip()
+        for origin in settings.allowed_origins.split(",")
+        if origin.strip()
+    ]
+
+    # In production, do not use a wildcard CORS policy. The API is intended
+    # for server-to-server POST requests and same-origin Swagger testing.
+    if settings.app_env == "production":
+        return configured_origins
+
+    return configured_origins or ["http://localhost:3000", "http://localhost:8000"]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=get_cors_origins(),
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -84,6 +99,16 @@ def get_github_service(settings: Settings = Depends(get_settings)) -> GitHubRepo
 
 def get_deepseek_service(settings: Settings = Depends(get_settings)) -> DeepSeekAnalyzerService:
     return DeepSeekAnalyzerService(settings)
+
+
+@app.get("/", tags=["Health"])
+async def root() -> dict[str, str]:
+    return {
+        "status": "running",
+        "message": "Live GitHub Repository Analyzer API",
+        "docs": "/docs",
+        "analyze_endpoint": "/api/analyze-repo",
+    }
 
 
 @app.get("/healthz", tags=["Health"])

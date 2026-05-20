@@ -18,15 +18,17 @@ class Settings(BaseSettings):
     app_name: str = "Live GitHub Repository Analyzer API"
     app_env: Literal["development", "staging", "production"] = "development"
     log_level: str = "INFO"
+    allowed_origins: str = ""
 
     deepseek_api_key: SecretStr = Field(..., description="DeepSeek API key")
     deepseek_base_url: AnyHttpUrl = "https://api.deepseek.com"
-    deepseek_model: str = "deepseek-v4-flash"
-    deepseek_thinking_type: Literal["enabled", "disabled"] = "disabled"
+    deepseek_model: str = "deepseek-v4-pro"
+    deepseek_thinking_type: Literal["enabled", "disabled"] = "enabled"
+    deepseek_reasoning_effort: Literal["high", "max"] = "high"
 
     github_token: SecretStr | None = None
 
-    request_timeout_seconds: float = 25.0
+    request_timeout_seconds: float = 60.0
     max_source_file_bytes: int = 200_000
     max_code_chars_for_llm: int = 80_000
 
